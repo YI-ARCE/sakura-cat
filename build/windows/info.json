@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "1.0.3"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "1.0.3",
+			"CompanyName": "樱花猫 - TG播放器",
+			"FileDescription": "Telegram MTProto BOT",
+			"LegalCopyright": "© 2026, 樱花猫",
+			"ProductName": "樱花猫",
+			"Comments": "基于电报 MTProto 开放协议的桌面端播放器"
+		}
+	}
+}

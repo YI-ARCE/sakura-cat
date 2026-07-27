@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>一起看 - 樱花猫</title>
+  <style>
+    /* ============ 全局重置 ============ */
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: #1a1a1a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ============ 主布局 ============ */
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+    /* ============ 顶部状态栏 ============ */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.65);
+      font-size: 13px;
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.2s ease, height 0.2s ease, padding 0.2s ease;
+      overflow: hidden;
+    }
+    #status-bar .sb-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #video-name { flex: 1; font-weight: 500; }
+    #online-count, #latency { color: #ccc; font-variant-numeric: tabular-nums; }
+    #role-badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    #role-badge.host { background: #ffb7c5; color: #1a1a1a; }
+    #role-badge.follower { background: rgba(255, 255, 255, 0.18); color: #fff; }
+    #role-badge.connecting { background: rgba(255, 170, 0, 0.25); color: #ffaa00; }
+
+    /* ============ 视频区域 ============ */
+    #video-container {
+      flex: 1;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #000;
+    }
+
+    /* ============ 指示器(浮层) ============ */
+    .overlay {
+      position: absolute;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 6px;
+      font-size: 13px;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 5;
+      transition: opacity 0.25s ease;
+    }
+    #sync-indicator {
+      top: 14px;
+      right: 14px;
+      color: #ffb7c5;
+      opacity: 0;
+    }
+    #sync-indicator.show { opacity: 1; }
+    #reconnect-indicator {
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffaa00;
+      opacity: 0;
+    }
+    #reconnect-indicator.show { opacity: 1; }
+    #party-ended {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 22px;
+      color: #fff;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 24px 32px;
+      border-radius: 12px;
+      z-index: 10;
+      display: none;
+    }
+    #party-ended.show { display: block; }
+
+    /* ============ 控制条 ============ */
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      height: 48px;
+      background: rgba(0, 0, 0, 0.72);
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.2s ease, height 0.2s ease, padding 0.2s ease;
+      overflow: hidden;
+    }
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 6px;
+      min-width: 44px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+    .ctrl-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
+    .ctrl-btn:active:not(:disabled) { transform: scale(0.94); }
+    .ctrl-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ============ 进度条 ============ */
+    .time-display {
+      font-size: 12px;
+      color: #ccc;
+      min-width: 42px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    #progress-wrap {
+      flex: 1;
+      position: relative;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      cursor: default;
+      min-width: 0;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      position: relative;
+      border-radius: 2px;
+      overflow: visible;
+    }
+    #progress-buffered {
+      height: 100%;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      width: 0%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #progress-played {
+      height: 100%;
+      background: #ffb7c5;
+      border-radius: 2px;
+      width: 0%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #progress-thumb {
+      width: 12px;
+      height: 12px;
+      background: #ffb7c5;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    /* 房主可拖动 */
+    #progress-wrap.host-mode { cursor: pointer; }
+    #progress-wrap.host-mode:hover #progress-thumb,
+    #progress-wrap.host-mode.dragging #progress-thumb { opacity: 1; }
+    #progress-wrap.host-mode.dragging { cursor: grabbing; }
+
+    /* ============ 倍速选择 ============ */
+    #rate-btn { min-width: 48px; font-size: 13px; }
+
+    /* ============ 选集按钮 ============ */
+    #ep-list-btn {
+      min-width: 48px;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ============ 分集浮层(参考 RepoPlayer.vue 的 episode-list grid) ============ */
+    #ep-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(360px, 80vw);
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.22s ease;
+      overflow: hidden;
+    }
+    #ep-panel.show {
+      display: flex;
+      transform: translateX(0);
+    }
+    #ep-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      height: 40px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      color: #ccc;
+    }
+    #ep-panel-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    #ep-panel-close:hover { background: rgba(255, 255, 255, 0.15); }
+    #ep-panel-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      align-content: start;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ep-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      border: none;
+      font-family: inherit;
+      padding: 4px;
+      overflow: hidden;
+    }
+    .ep-item:hover { background: rgba(255, 183, 197, 0.28); }
+    .ep-item:active { transform: scale(0.94); }
+    .ep-item.is-current {
+      background: #ffb7c5;
+      color: #1a1a1a;
+    }
+    .ep-item.is-current:hover { background: #ffa5b8; }
+    .ep-item-label {
+      pointer-events: none;
+      text-align: center;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+    .ep-item.is-len1 .ep-item-label { font-size: 18px; }
+    .ep-item.is-len2 .ep-item-label { font-size: 16px; }
+    .ep-item.is-len3 .ep-item-label { font-size: 13px; }
+    .ep-item.is-len4 .ep-item-label { font-size: 11px; }
+    #ep-panel-empty {
+      grid-column: 1 / -1;
+      padding: 32px 12px;
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+    }
+
+    /* ============ 跟随者模式:隐藏控制按钮 ============ */
+    #controls.follower-mode .ctrl-btn { display: none; }
+    #controls.follower-mode #progress-wrap { cursor: default; }
+
+    /* ============ 控件栏自动隐藏(参考 VideoPlayer.vue) ============ */
+    /* 播放中无交互 3s 后隐藏 status-bar 与 controls,video-container 自动撑满 */
+    #app.is-controls-hidden #status-bar {
+      height: 0;
+      padding: 0;
+      opacity: 0;
+    }
+    #app.is-controls-hidden #controls {
+      height: 0;
+      padding: 0;
+      opacity: 0;
+    }
+    /* 控件隐藏时同步隐藏鼠标光标 */
+    #app.is-controls-hidden,
+    #app.is-controls-hidden * {
+      cursor: none !important;
+    }
+
+    /* ============ 全屏样式(对 #app 整体全屏) ============ */
+    #app:fullscreen { background: #000; }
+    #app:fullscreen #video-container { flex: 1; }
+    #app:fullscreen #video { object-fit: contain; }
+    /* Webkit 兼容 */
+    #app:-webkit-full-screen { background: #000; }
+
+    /* ============ 响应式(移动端) ============ */
+    @media (max-width: 600px) {
+      #status-bar { font-size: 12px; gap: 8px; padding: 0 10px; }
+      #controls { gap: 4px; padding: 0 6px; }
+      .ctrl-btn { min-width: 40px; min-height: 40px; padding: 8px; font-size: 15px; }
+      .time-display { font-size: 11px; min-width: 38px; }
+      #video-name { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部状态栏 -->
+    <div id="status-bar">
+      <span id="video-name" class="sb-item">连接中...</span>
+      <span id="online-count" class="sb-item">在线:0人</span>
+      <span id="latency" class="sb-item">延迟:--ms</span>
+      <span id="role-badge" class="connecting">连接中</span>
+    </div>
+
+    <!-- 视频区域 -->
+    <div id="video-container">
+      <video id="video" playsinline preload="metadata"></video>
+      <div id="sync-indicator" class="overlay">正在同步...</div>
+      <div id="reconnect-indicator" class="overlay">重连中...</div>
+      <div id="party-ended">一起看已结束</div>
+
+      <!-- 分集选择浮层(房主可用) -->
+      <div id="ep-panel" aria-hidden="true">
+        <div id="ep-panel-header">
+          <span>选集</span>
+          <button id="ep-panel-close" type="button" title="关闭" aria-label="关闭">×</button>
+        </div>
+        <div id="ep-panel-list"></div>
+      </div>
+    </div>
+
+    <!-- 控制条 -->
+    <div id="controls">
+      <button id="prev-ep" class="ctrl-btn" title="上一集" disabled>⏮</button>
+      <button id="play-pause" class="ctrl-btn" title="播放/暂停" disabled>▶</button>
+      <button id="next-ep" class="ctrl-btn" title="下一集" disabled>⏭</button>
+      <span id="current-time" class="time-display">00:00</span>
+      <div id="progress-wrap">
+        <div id="progress-bar">
+          <div id="progress-buffered"></div>
+          <div id="progress-played"></div>
+          <div id="progress-thumb"></div>
+        </div>
+      </div>
+      <span id="duration" class="time-display">00:00</span>
+      <button id="rate-btn" class="ctrl-btn" title="倍速" disabled>1x</button>
+      <button id="ep-list-btn" class="ctrl-btn" title="选集" disabled>选集</button>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* ============================================================
+     * 一起看 - 观看端页面(房主/跟随者双角色)
+     * 通过 WS 协议与后端通信,房主拥有完整控制,跟随者只读同步
+     * ============================================================ */
+
+    // ============ DOM 引用 ============
+    const videoEl = document.getElementById('video');
+    const appEl = document.getElementById('app');
+    const videoContainerEl = document.getElementById('video-container');
+    const videoNameEl = document.getElementById('video-name');
+    const onlineCountEl = document.getElementById('online-count');
+    const latencyEl = document.getElementById('latency');
+    const roleBadgeEl = document.getElementById('role-badge');
+    const syncIndicatorEl = document.getElementById('sync-indicator');
+    const reconnectIndicatorEl = document.getElementById('reconnect-indicator');
+    const partyEndedEl = document.getElementById('party-ended');
+    const controlsEl = document.getElementById('controls');
+    const prevEpBtn = document.getElementById('prev-ep');
+    const playPauseBtn = document.getElementById('play-pause');
+    const nextEpBtn = document.getElementById('next-ep');
+    const currentTimeEl = document.getElementById('current-time');
+    const durationEl = document.getElementById('duration');
+    const progressWrap = document.getElementById('progress-wrap');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPlayed = document.getElementById('progress-played');
+    const progressBuffered = document.getElementById('progress-buffered');
+    const progressThumb = document.getElementById('progress-thumb');
+    const rateBtn = document.getElementById('rate-btn');
+    const epListBtn = document.getElementById('ep-list-btn');
+    const epPanel = document.getElementById('ep-panel');
+    const epPanelList = document.getElementById('ep-panel-list');
+    const epPanelClose = document.getElementById('ep-panel-close');
+
+    // ============ 全局状态 ============
+    const state = {
+      isHost: false,                  // 当前是否为房主
+      roomId: null,                   // 房间 ID
+      clientName: 'Guest-' + Math.floor(1000 + Math.random() * 9000), // 客户端名称
+      ws: null,                       // WebSocket 实例
+      wsUrl: null,                    // WS 地址
+      latency: 0,                     // 延迟(ms)
+      onlineCount: 0,                 // 在线人数
+      hostName: '',                   // 当前房主名称
+      videoName: '一起看',             // 视频名
+      currentVeId: null,              // 当前分集 ID
+      episodeList: [],                // 分集列表 [{ ve_id, title }]
+      currentEpisodeIndex: -1,        // 当前分集在列表中的索引
+      lastStateSyncTs: 0,             // 上次 state_sync 发送时间(节流)
+      reconnectTimer: null,           // 重连定时器
+      heartbeatTimer: null,           // 心跳定时器
+      syncHideTimer: null,            // 同步指示器隐藏定时器
+      isDragging: false,              // 是否正在拖动进度条
+      applyingRemote: false,          // 是否正在应用远端状态(避免事件回环)
+      partyEnded: false,              // 一起看是否已结束
+      currentRate: 1,                 // 当前倍速
+      rateOptions: [1, 1.25, 1.5, 2], // 倍速档位
+      rateIndex: 0,                   // 当前倍速索引
+      // 控件栏自动隐藏(参考 VideoPlayer.vue)
+      controlsVisible: true,          // 控件栏是否可见
+      isFullscreen: false,            // 是否处于全屏
+      hideTimer: null,                // 自动隐藏定时器
+      clickTimer: null,               // 单击/双击区分定时器
+      temporaryShowTimer: null,       // 临时显示定时器
+      // 分集选择浮层
+      epPanelOpen: false,             // 浮层是否打开
+    };
+
+    // ============ 工具函数 ============
+
+    /** 格式化时间秒为 MM:SS 或 HH:MM:SS */
+    function formatTime(sec) {
+      if (!sec || !isFinite(sec) || sec < 0) return '00:00';
+      sec = Math.floor(sec);
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      const pad = n => String(n).padStart(2, '0');
+      return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    }
+
+    /** 发送 WS 消息 */
+    function send(msg) {
+      if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        try {
+          state.ws.send(JSON.stringify(msg));
+        } catch (e) {
+          console.warn('发送 WS 消息失败:', e);
+        }
+      }
+    }
+
+    /** 从当前页面 URL 推断 roomId 与 wsUrl */
+    function parseUrl() {
+      const pageUrl = new URL(window.location.href);
+
+      // 优先从 query 参数取 roomId
+      let roomId = pageUrl.searchParams.get('roomId');
+
+      // 兜底:从路径末段取(/party/<roomId> 或 /<roomId>)
+      if (!roomId) {
+        const parts = pageUrl.pathname.split('/').filter(Boolean);
+        if (parts.length >= 2 && parts[parts.length - 2] === 'party') {
+          roomId = parts[parts.length - 1];
+        } else if (parts.length >= 1) {
+          roomId = parts[parts.length - 1];
+        }
+      }
+
+      // 构造 wsUrl:优先使用 query 参数 wsUrl(支持 WS 独立端口),否则从页面 URL 推断
+      let wsUrl = pageUrl.searchParams.get('wsUrl');
+      if (!wsUrl) {
+        // http:// -> ws://, https:// -> wss://,替换路径 /party/<roomId> 为 /ws?roomId=<roomId>
+        const wsOrigin = pageUrl.origin.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
+        // 必须携带 clientName，否则后端 handleWS 会以 400 拒绝握手
+        wsUrl = `${wsOrigin}/ws?roomId=${encodeURIComponent(roomId || '')}&clientName=${encodeURIComponent(state.clientName)}`;
+      }
+
+      return { roomId: roomId || '', wsUrl };
+    }
+
+    /** 显示"正在同步..."指示器 1.5s */
+    function showSyncIndicator() {
+      syncIndicatorEl.classList.add('show');
+      if (state.syncHideTimer) clearTimeout(state.syncHideTimer);
+      state.syncHideTimer = setTimeout(() => {
+        syncIndicatorEl.classList.remove('show');
+      }, 1500);
+    }
+
+    // ============ 控件栏自动隐藏(参考 VideoPlayer.vue) ============
+
+    /** 清除自动隐藏定时器 */
+    function clearHideTimer() {
+      if (state.hideTimer) {
+        clearTimeout(state.hideTimer);
+        state.hideTimer = null;
+      }
+    }
+
+    /** 隐藏控件栏(status-bar + controls) */
+    function hideControls() {
+      state.controlsVisible = false;
+      appEl.classList.add('is-controls-hidden');
+    }
+
+    /** 显示控件栏并清除隐藏定时器 */
+    function showControls() {
+      if (!state.controlsVisible) {
+        state.controlsVisible = true;
+        appEl.classList.remove('is-controls-hidden');
+      }
+      clearHideTimer();
+    }
+
+    /** 安排 3s 后自动隐藏(仅在播放中且非交互态时生效) */
+    function scheduleHide() {
+      clearHideTimer();
+      // 浮层打开时不自动隐藏控件栏
+      if (state.epPanelOpen) return;
+      state.hideTimer = setTimeout(() => {
+        // 仅在播放中且非交互态时隐藏
+        if (
+          !videoEl.paused &&
+          !state.isDragging &&
+          !state.applyingRemote
+        ) {
+          hideControls();
+        }
+      }, 3000);
+    }
+
+    /** 临时显示控件 ms 毫秒后,若仍在播放则继续走自动隐藏流程 */
+    function showControlsTemporary(ms = 2000) {
+      showControls();
+      if (state.temporaryShowTimer) clearTimeout(state.temporaryShowTimer);
+      state.temporaryShowTimer = setTimeout(() => {
+        state.temporaryShowTimer = null;
+        if (!videoEl.paused) scheduleHide();
+      }, ms);
+    }
+
+    /** 鼠标移动:显示控件,播放中重新计时隐藏 */
+    function handleMouseMove() {
+      showControls();
+      if (!videoEl.paused) scheduleHide();
+    }
+
+    // ============ 双击全屏(参考 VideoPlayer.vue) ============
+
+    /** 切换全屏(对 #app 请求,使 status-bar/video/controls 整体进入全屏
+     *  参考 VideoPlayer.vue 的 toggleFullscreen(containerRef):对整个播放器容器全屏,
+     *  而非仅对 video 元素,确保控制栏在全屏视图中依然可见) */
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) {
+          try { document.exitFullscreen(); } catch (e) { /* 忽略 */ }
+        }
+      } else if (appEl) {
+        const req = appEl.requestFullscreen
+          || appEl.webkitRequestFullscreen;
+        if (req) {
+          try { req.call(appEl); } catch (e) { /* 忽略 */ }
+        }
+      }
+    }
+
+    /** 全屏状态变化监听 */
+    function handleFullscreenChange() {
+      state.isFullscreen = document.fullscreenElement !== null;
+    }
+
+    /** 视频单击:200ms 内若无第二次点击则触发 togglePlay
+     *  跟随者单击仅显示控件,不控制播放(避免被 state_sync 立即回滚) */
+    function handleVideoClick() {
+      if (!state.isHost) {
+        showControls();
+        return;
+      }
+      if (state.clickTimer) return;
+      state.clickTimer = setTimeout(() => {
+        state.clickTimer = null;
+        if (videoEl.paused) {
+          videoEl.play().catch(() => { /* 自动播放可能被阻止 */ });
+        } else {
+          videoEl.pause();
+        }
+      }, 200);
+    }
+
+    /** 视频双击:取消延迟的单击,触发全屏切换(房主/跟随者均可) */
+    function handleVideoDblClick() {
+      if (state.clickTimer) {
+        clearTimeout(state.clickTimer);
+        state.clickTimer = null;
+      }
+      toggleFullscreen();
+    }
+
+    /** 显示"重连中..."指示器 */
+    function showReconnectIndicator() {
+      reconnectIndicatorEl.classList.add('show');
+    }
+    function hideReconnectIndicator() {
+      reconnectIndicatorEl.classList.remove('show');
+    }
+
+    /** 更新顶部状态栏 */
+    function updateStatusBar() {
+      videoNameEl.textContent = state.videoName || '一起看';
+      onlineCountEl.textContent = `在线:${state.onlineCount}人`;
+      latencyEl.textContent = state.latency > 0 ? `延迟:${state.latency}ms` : '延迟:--ms';
+      roleBadgeEl.classList.remove('host', 'follower', 'connecting');
+      if (state.partyEnded) {
+        roleBadgeEl.textContent = '已结束';
+        roleBadgeEl.classList.add('connecting');
+      } else if (state.isHost) {
+        roleBadgeEl.textContent = '★房主';
+        roleBadgeEl.classList.add('host');
+      } else if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        roleBadgeEl.textContent = '跟随';
+        roleBadgeEl.classList.add('follower');
+      } else {
+        roleBadgeEl.textContent = '连接中';
+        roleBadgeEl.classList.add('connecting');
+      }
+    }
+
+    /** 切换 UI 角色(房主/跟随者) */
+    function applyRole() {
+      if (state.isHost) {
+        controlsEl.classList.remove('follower-mode');
+        progressWrap.classList.add('host-mode');
+        // 启用控制按钮
+        playPauseBtn.disabled = !state.currentVeId;
+        rateBtn.disabled = false;
+        updateEpisodeButtons();
+      } else {
+        controlsEl.classList.add('follower-mode');
+        progressWrap.classList.remove('host-mode', 'dragging');
+        // 禁用所有按钮(follower 模式下 CSS 已隐藏,这里再保险)
+        prevEpBtn.disabled = true;
+        playPauseBtn.disabled = true;
+        nextEpBtn.disabled = true;
+        rateBtn.disabled = true;
+        epListBtn.disabled = true;
+        // 跟随者关闭分集浮层(不可切集)
+        if (state.epPanelOpen) closeEpPanel();
+      }
+      updatePlayPauseIcon();
+      updateStatusBar();
+    }
+
+    /** 更新播放/暂停按钮图标 */
+    function updatePlayPauseIcon() {
+      if (!videoEl.src) {
+        playPauseBtn.textContent = '▶';
+        return;
+      }
+      playPauseBtn.textContent = videoEl.paused ? '▶' : '⏸';
+    }
+
+    /** 更新上一集/下一集按钮可用状态 */
+    function updateEpisodeButtons() {
+      if (!state.isHost || state.episodeList.length === 0) {
+        prevEpBtn.disabled = true;
+        nextEpBtn.disabled = true;
+        epListBtn.disabled = true;
+        epListBtn.textContent = '选集';
+        return;
+      }
+      prevEpBtn.disabled = state.currentEpisodeIndex <= 0;
+      nextEpBtn.disabled = state.currentEpisodeIndex >= state.episodeList.length - 1;
+      epListBtn.disabled = false;
+      // 选集按钮文案:有集号显示"第N集",否则显示"选集"
+      const cur = state.currentEpisodeIndex >= 0 ? state.episodeList[state.currentEpisodeIndex] : null;
+      if (cur && typeof cur === 'object' && cur.ve_collect > 0) {
+        epListBtn.textContent = '第' + cur.ve_collect + '集';
+      } else {
+        epListBtn.textContent = '选集';
+      }
+    }
+
+    /** 分集方块显示文案(参考 RepoPlayer.vue episodeDisplayText):
+     *  有集号显示纯数字,否则显示标题前两字,都没有显示 ? */
+    function episodeDisplayText(ep) {
+      if (!ep) return '?';
+      if (typeof ep === 'number') return String(ep);
+      if (ep.ve_collect > 0) return String(ep.ve_collect);
+      if (ep.ve_title) return ep.ve_title.slice(0, 2);
+      return '?';
+    }
+
+    /** 渲染分集浮层列表(参考 RepoPlayer.vue 的 episode-list grid) */
+    function renderEpPanel() {
+      epPanelList.innerHTML = '';
+      if (state.episodeList.length === 0) {
+        const empty = document.createElement('div');
+        empty.id = 'ep-panel-empty';
+        empty.textContent = '暂无分集';
+        epPanelList.appendChild(empty);
+        return;
+      }
+      state.episodeList.forEach((ep, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ep-item';
+        const text = episodeDisplayText(ep);
+        // 按文案长度选字号(参考 RepoPlayer episodeLenClass)
+        const lenClass = text.length >= 4 ? 'is-len4'
+          : text.length === 3 ? 'is-len3'
+          : text.length === 2 ? 'is-len2'
+          : 'is-len1';
+        btn.classList.add(lenClass);
+        if (idx === state.currentEpisodeIndex) {
+          btn.classList.add('is-current');
+          btn.setAttribute('data-current', '1');
+        }
+        btn.title = (typeof ep === 'object' && ep.ve_title) ? ep.ve_title : '';
+        const label = document.createElement('span');
+        label.className = 'ep-item-label';
+        label.textContent = text;
+        btn.appendChild(label);
+        btn.addEventListener('click', () => {
+          const veId = typeof ep === 'object' ? ep.ve_id : ep;
+          if (!veId || veId === state.currentVeId) {
+            closeEpPanel();
+            return;
+          }
+          send({ type: 'episode_change', ve_id: veId });
+          closeEpPanel();
+        });
+        epPanelList.appendChild(btn);
+      });
+    }
+
+    /** 打开分集浮层并滚动至当前集 */
+    function openEpPanel() {
+      if (!state.isHost || state.episodeList.length === 0) return;
+      renderEpPanel();
+      state.epPanelOpen = true;
+      epPanel.classList.add('show');
+      epPanel.setAttribute('aria-hidden', 'false');
+      // 浮层打开时强制显示控件栏并暂停自动隐藏
+      showControls();
+      clearHideTimer();
+      // 滚动至当前集(下一帧确保布局已就绪)
+      requestAnimationFrame(() => {
+        epPanelList.querySelector('[data-current]')
+          ?.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    /** 关闭分集浮层 */
+    function closeEpPanel() {
+      if (!state.epPanelOpen) return;
+      state.epPanelOpen = false;
+      epPanel.classList.remove('show');
+      epPanel.setAttribute('aria-hidden', 'true');
+      // 关闭后若仍在播放则恢复自动隐藏
+      if (!videoEl.paused) scheduleHide();
+    }
+
+    /** 更新进度条 UI */
+    function updateProgressUI() {
+      const dur = videoEl.duration || 0;
+      const cur = videoEl.currentTime || 0;
+      const playedPct = dur > 0 ? (cur / dur) * 100 : 0;
+      progressPlayed.style.width = playedPct + '%';
+      progressThumb.style.left = playedPct + '%';
+
+      // 已缓冲
+      if (videoEl.buffered.length > 0 && dur > 0) {
+        const bufferedEnd = videoEl.buffered.end(videoEl.buffered.length - 1);
+        const bufferedPct = Math.min(100, (bufferedEnd / dur) * 100);
+        progressBuffered.style.width = bufferedPct + '%';
+      }
+
+      currentTimeEl.textContent = formatTime(cur);
+      durationEl.textContent = formatTime(dur);
+    }
+
+    /** 设置视频源并恢复播放状态 */
+    function setVideoSrc(streamUrl, currentTime, playing, rate) {
+      if (!streamUrl) return;
+      state.applyingRemote = true;
+      const wasSameSrc = videoEl.src === streamUrl;
+      if (!wasSameSrc) {
+        videoEl.src = streamUrl;
+        videoEl.load();
+      }
+      // 等待 metadata 加载后再设置 currentTime(若同源且已 loadedmetadata 可立即设)
+      const applyState = () => {
+        if (currentTime != null && isFinite(currentTime)) {
+          try { videoEl.currentTime = currentTime; } catch (e) { /* 忽略 */ }
+        }
+        if (rate != null && rate > 0) {
+          try { videoEl.playbackRate = rate; } catch (e) { /* 忽略 */ }
+          state.currentRate = rate;
+          state.rateIndex = state.rateOptions.indexOf(rate);
+          if (state.rateIndex < 0) state.rateIndex = 0;
+          rateBtn.textContent = state.currentRate + 'x';
+        }
+        if (playing) {
+          videoEl.play().catch(() => { /* 自动播放可能被阻止 */ });
+        } else {
+          videoEl.pause();
+        }
+        state.applyingRemote = false;
+        updatePlayPauseIcon();
+        updateProgressUI();
+      };
+      if (wasSameSrc && videoEl.readyState >= 1) {
+        applyState();
+      } else {
+        // 一次性监听 loadedmetadata
+        const onMeta = () => {
+          videoEl.removeEventListener('loadedmetadata', onMeta);
+          applyState();
+        };
+        videoEl.addEventListener('loadedmetadata', onMeta);
+        // 兜底:1.5s 后强制应用(避免 metadata 不触发卡死)
+        setTimeout(() => {
+          videoEl.removeEventListener('loadedmetadata', onMeta);
+          if (state.applyingRemote) applyState();
+        }, 1500);
+      }
+    }
+
+    // ============ WebSocket 客户端 ============
+
+    /** 连接 WS */
+    function connectWS() {
+      if (state.partyEnded) return;
+      if (state.ws) {
+        try { state.ws.close(); } catch (e) { /* 忽略 */ }
+        state.ws = null;
+      }
+
+      try {
+        state.ws = new WebSocket(state.wsUrl);
+      } catch (e) {
+        console.error('WS 创建失败:', e);
+        scheduleReconnect();
+        return;
+      }
+
+      state.ws.onopen = () => {
+        hideReconnectIndicator();
+        // 发送 join
+        send({
+          type: 'join',
+          roomId: state.roomId,
+          clientName: state.clientName,
+        });
+        // 启动心跳
+        startHeartbeat();
+        updateStatusBar();
+      };
+
+      state.ws.onmessage = (ev) => {
+        let msg;
+        try {
+          msg = JSON.parse(ev.data);
+        } catch (e) {
+          console.warn('解析 WS 消息失败:', e);
+          return;
+        }
+        handleMessage(msg);
+      };
+
+      state.ws.onerror = (e) => {
+        console.warn('WS 错误:', e);
+      };
+
+      state.ws.onclose = () => {
+        stopHeartbeat();
+        if (!state.partyEnded) {
+          showReconnectIndicator();
+          roleBadgeEl.classList.remove('host', 'follower');
+          roleBadgeEl.classList.add('connecting');
+          roleBadgeEl.textContent = '重连中';
+          scheduleReconnect();
+        }
+      };
+    }
+
+    /** 安排重连(3s 后) */
+    function scheduleReconnect() {
+      if (state.reconnectTimer) return;
+      state.reconnectTimer = setTimeout(() => {
+        state.reconnectTimer = null;
+        connectWS();
+      }, 3000);
+    }
+
+    /** 启动心跳:每 10s 发送 ping */
+    function startHeartbeat() {
+      stopHeartbeat();
+      state.heartbeatTimer = setInterval(() => {
+        send({ type: 'ping', t: Date.now() });
+      }, 10000);
+    }
+
+    /** 停止心跳 */
+    function stopHeartbeat() {
+      if (state.heartbeatTimer) {
+        clearInterval(state.heartbeatTimer);
+        state.heartbeatTimer = null;
+      }
+    }
+
+    /** 处理收到的 WS 消息 */
+    function handleMessage(msg) {
+      if (!msg || !msg.type) return;
+      switch (msg.type) {
+        case 'welcome':
+          handleWelcome(msg);
+          break;
+        case 'play':
+          handleRemotePlay(msg);
+          break;
+        case 'pause':
+          handleRemotePause(msg);
+          break;
+        case 'seek':
+          handleRemoteSeek(msg);
+          break;
+        case 'rate':
+          handleRemoteRate(msg);
+          break;
+        case 'episode_change':
+          handleRemoteEpisodeChange(msg);
+          break;
+        case 'state_sync':
+          handleStateSync(msg);
+          break;
+        case 'client_joined':
+          state.onlineCount = msg.clientCount || state.onlineCount;
+          if (msg.hostName) state.hostName = msg.hostName;
+          updateStatusBar();
+          break;
+        case 'client_left':
+          state.onlineCount = msg.clientCount || state.onlineCount;
+          updateStatusBar();
+          break;
+        case 'host_changed':
+          handleHostChanged(msg);
+          break;
+        case 'host_leaving':
+          handleHostLeaving();
+          break;
+        case 'pong':
+          // 计算延迟:用客户端发送时间与当前时间差
+          if (msg.t) {
+            state.latency = Date.now() - msg.t;
+            updateStatusBar();
+          }
+          break;
+        case 'error':
+          console.warn('服务端错误:', msg.message || msg.error || msg);
+          break;
+        default:
+          console.debug('未处理的消息类型:', msg.type, msg);
+      }
+    }
+
+    /** 处理 welcome:初始化状态与 UI 角色 */
+    function handleWelcome(msg) {
+      state.isHost = !!msg.isHost;
+      state.onlineCount = (msg.clients && msg.clients.length) || (msg.clientCount || 1);
+      state.currentVeId = msg.ve_id || null;
+      if (msg.videoName) state.videoName = msg.videoName;
+      // 可选:welcome 中携带 episodeList(扩展字段,后端可选提供)
+      if (Array.isArray(msg.episodeList)) {
+        state.episodeList = msg.episodeList;
+        // 定位当前分集索引
+        state.currentEpisodeIndex = state.episodeList.findIndex(ep => {
+          const id = typeof ep === 'object' ? ep.ve_id : ep;
+          return String(id) === String(state.currentVeId);
+        });
+      }
+      // 设置视频源与初始播放状态
+      if (msg.streamUrl) {
+        setVideoSrc(msg.streamUrl, msg.currentTime, msg.playing, msg.rate);
+      }
+      // 如果 welcome 携带 duration,直接显示
+      if (msg.duration && isFinite(msg.duration)) {
+        durationEl.textContent = formatTime(msg.duration);
+      }
+      applyRole();
+    }
+
+    /** 处理远端 play */
+    function handleRemotePlay(msg) {
+      if (state.isHost) return; // 房主不处理(自己发起的)
+      state.applyingRemote = true;
+      if (msg.currentTime != null && isFinite(msg.currentTime)) {
+        try { videoEl.currentTime = msg.currentTime; } catch (e) { /* 忽略 */ }
+      }
+      videoEl.play().catch(() => { /* 自动播放可能被阻止 */ });
+      state.applyingRemote = false;
+      updatePlayPauseIcon();
+      showSyncIndicator();
+    }
+
+    /** 处理远端 pause */
+    function handleRemotePause(msg) {
+      if (state.isHost) return;
+      state.applyingRemote = true;
+      if (msg.currentTime != null && isFinite(msg.currentTime)) {
+        try { videoEl.currentTime = msg.currentTime; } catch (e) { /* 忽略 */ }
+      }
+      videoEl.pause();
+      state.applyingRemote = false;
+      updatePlayPauseIcon();
+      showSyncIndicator();
+    }
+
+    /** 处理远端 seek */
+    function handleRemoteSeek(msg) {
+      if (state.isHost) return;
+      state.applyingRemote = true;
+      if (msg.currentTime != null && isFinite(msg.currentTime)) {
+        try { videoEl.currentTime = msg.currentTime; } catch (e) { /* 忽略 */ }
+      }
+      state.applyingRemote = false;
+      updateProgressUI();
+      showSyncIndicator();
+    }
+
+    /** 处理远端 rate */
+    function handleRemoteRate(msg) {
+      if (state.isHost) return;
+      state.applyingRemote = true;
+      if (msg.rate != null && msg.rate > 0) {
+        try { videoEl.playbackRate = msg.rate; } catch (e) { /* 忽略 */ }
+        state.currentRate = msg.rate;
+        state.rateIndex = state.rateOptions.indexOf(msg.rate);
+        if (state.rateIndex < 0) state.rateIndex = 0;
+        rateBtn.textContent = msg.rate + 'x';
+      }
+      state.applyingRemote = false;
+    }
+
+    /** 处理远端 episode_change(广播给所有人,包括房主) */
+    function handleRemoteEpisodeChange(msg) {
+      state.currentVeId = msg.ve_id;
+      // 更新当前分集索引
+      if (state.episodeList.length > 0) {
+        state.currentEpisodeIndex = state.episodeList.findIndex(ep => {
+          const id = typeof ep === 'object' ? ep.ve_id : ep;
+          return String(id) === String(msg.ve_id);
+        });
+      }
+      if (msg.streamUrl) {
+        // 切集:保留当前播放状态(由房主决定),跟随者应用房主后续 state_sync
+        setVideoSrc(msg.streamUrl, 0, false, state.currentRate);
+      }
+      updateEpisodeButtons();
+      // 浮层打开时刷新当前集高亮并滚动至新当前集
+      if (state.epPanelOpen) {
+        renderEpPanel();
+        requestAnimationFrame(() => {
+          epPanelList.querySelector('[data-current]')
+            ?.scrollIntoView({ block: 'nearest' });
+        });
+      }
+      showSyncIndicator();
+    }
+
+    /** 处理 state_sync(跟随者应用,房主忽略) */
+    function handleStateSync(msg) {
+      if (state.isHost) return;
+      // ve_id 不一致则忽略(state_sync 应当对应当前集)
+      if (msg.ve_id && state.currentVeId && String(msg.ve_id) !== String(state.currentVeId)) {
+        return;
+      }
+      state.applyingRemote = true;
+      if (msg.currentTime != null && isFinite(msg.currentTime)) {
+        // 仅当差异 > 1s 时才校正,避免频繁跳帧
+        if (Math.abs(videoEl.currentTime - msg.currentTime) > 1) {
+          try { videoEl.currentTime = msg.currentTime; } catch (e) { /* 忽略 */ }
+        }
+      }
+      if (msg.rate != null && msg.rate > 0) {
+        try { videoEl.playbackRate = msg.rate; } catch (e) { /* 忽略 */ }
+        state.currentRate = msg.rate;
+        state.rateIndex = state.rateOptions.indexOf(msg.rate);
+        if (state.rateIndex < 0) state.rateIndex = 0;
+        rateBtn.textContent = msg.rate + 'x';
+      }
+      if (msg.playing) {
+        videoEl.play().catch(() => { /* 忽略 */ });
+      } else {
+        videoEl.pause();
+      }
+      state.applyingRemote = false;
+      updatePlayPauseIcon();
+      updateProgressUI();
+      showSyncIndicator();
+    }
+
+    /** 处理房主变更 */
+    function handleHostChanged(msg) {
+      state.hostName = msg.hostName || '';
+      // 如果自己成为房主,切换为完整控制 UI
+      if (msg.hostName === state.clientName || msg.isMe) {
+        state.isHost = true;
+      } else {
+        state.isHost = false;
+      }
+      applyRole();
+    }
+
+    /** 处理一起看结束 */
+    function handleHostLeaving() {
+      state.partyEnded = true;
+      stopHeartbeat();
+      if (state.reconnectTimer) {
+        clearTimeout(state.reconnectTimer);
+        state.reconnectTimer = null;
+      }
+      try { videoEl.pause(); } catch (e) { /* 忽略 */ }
+      partyEndedEl.classList.add('show');
+      hideReconnectIndicator();
+      updateStatusBar();
+    }
+
+    // ============ <video> 事件 ============
+
+    /** loadedmetadata:上报 duration */
+    videoEl.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = formatTime(videoEl.duration);
+      updateProgressUI();
+      // 上报时长给后端(房主/跟随者都可上报,后端去重)
+      if (videoEl.duration && isFinite(videoEl.duration)) {
+        send({ type: 'report_duration', duration: videoEl.duration });
+      }
+    });
+
+    /** timeupdate:房主每 5s 发送 state_sync */
+    videoEl.addEventListener('timeupdate', () => {
+      updateProgressUI();
+      if (state.isHost && !state.applyingRemote && !state.isDragging) {
+        const now = Date.now();
+        if (now - state.lastStateSyncTs >= 5000) {
+          state.lastStateSyncTs = now;
+          send({
+            type: 'state_sync',
+            ve_id: state.currentVeId,
+            currentTime: videoEl.currentTime,
+            playing: !videoEl.paused,
+            rate: videoEl.playbackRate,
+          });
+        }
+      }
+    });
+
+    /** play(仅房主):发送 play,并启动控件栏自动隐藏 */
+    videoEl.addEventListener('play', () => {
+      updatePlayPauseIcon();
+      if (state.isHost && !state.applyingRemote) {
+        send({ type: 'play', currentTime: videoEl.currentTime });
+      }
+      // 控件栏联动:播放中走自动隐藏流程
+      if (!state.isDragging && !state.applyingRemote) {
+        scheduleHide();
+      }
+    });
+
+    /** pause(仅房主):发送 pause,并强制显示控件栏 */
+    videoEl.addEventListener('pause', () => {
+      updatePlayPauseIcon();
+      if (state.isHost && !state.applyingRemote) {
+        send({ type: 'pause', currentTime: videoEl.currentTime });
+      }
+      // 暂停时强制显示控件栏,便于用户操作
+      showControls();
+      clearHideTimer();
+    });
+
+    /** seeked(仅房主):发送 seek */
+    videoEl.addEventListener('seeked', () => {
+      updateProgressUI();
+      if (state.isHost && !state.applyingRemote) {
+        send({ type: 'seek', currentTime: videoEl.currentTime });
+      }
+    });
+
+    /** ratechange(仅房主):发送 rate */
+    videoEl.addEventListener('ratechange', () => {
+      if (state.isHost && !state.applyingRemote) {
+        send({ type: 'rate', rate: videoEl.playbackRate });
+      }
+    });
+
+    /** progress:更新已缓冲条 */
+    videoEl.addEventListener('progress', updateProgressUI);
+
+    /** error:视频加载失败,打印详细错误 */
+    videoEl.addEventListener('error', () => {
+      const err = videoEl.error;
+      console.error('[video error]', err ? `code=${err.code} message=${err.message}` : 'unknown', 'src=', videoEl.src);
+    });
+    videoEl.addEventListener('stalled', () => {
+      console.warn('[video stalled] src=', videoEl.src, 'readyState=', videoEl.readyState);
+    });
+    videoEl.addEventListener('abort', () => {
+      console.warn('[video abort] src=', videoEl.src);
+    });
+
+    /** durationchange:更新时长显示 */
+    videoEl.addEventListener('durationchange', () => {
+      durationEl.textContent = formatTime(videoEl.duration);
+      updateProgressUI();
+    });
+
+    /** click:单击切换播放/暂停(用 200ms 定时器区分双击)
+     *  跟随者单击仅显示控件 */
+    videoEl.addEventListener('click', handleVideoClick);
+
+    /** dblclick:双击切换全屏(房主/跟随者均可) */
+    videoEl.addEventListener('dblclick', handleVideoDblClick);
+
+    /** mousemove:鼠标在播放器任意区域移动时显示控件,播放中重新计时隐藏
+     *  监听 #app 以覆盖 status-bar/controls 上的移动 */
+    appEl.addEventListener('mousemove', handleMouseMove);
+
+    /** fullscreenchange:同步全屏状态 */
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    // ============ 控制按钮事件 ============
+
+    /** 播放/暂停按钮 */
+    playPauseBtn.addEventListener('click', () => {
+      if (!state.isHost) return;
+      if (videoEl.paused) {
+        videoEl.play().catch(() => { /* 忽略 */ });
+      } else {
+        videoEl.pause();
+      }
+    });
+
+    /** 倍速按钮:循环切换 1 → 1.25 → 1.5 → 2 → 1 */
+    rateBtn.addEventListener('click', () => {
+      if (!state.isHost) return;
+      state.rateIndex = (state.rateIndex + 1) % state.rateOptions.length;
+      const newRate = state.rateOptions[state.rateIndex];
+      videoEl.playbackRate = newRate;
+      state.currentRate = newRate;
+      rateBtn.textContent = newRate + 'x';
+      // ratechange 事件会发送 rate 消息,这里不重复发送
+    });
+
+    /** 上一集 */
+    prevEpBtn.addEventListener('click', () => {
+      if (!state.isHost || state.currentEpisodeIndex <= 0) return;
+      const prevEp = state.episodeList[state.currentEpisodeIndex - 1];
+      const veId = typeof prevEp === 'object' ? prevEp.ve_id : prevEp;
+      if (veId) {
+        send({ type: 'episode_change', ve_id: veId });
+      }
+    });
+
+    /** 下一集 */
+    nextEpBtn.addEventListener('click', () => {
+      if (!state.isHost) return;
+      if (state.currentEpisodeIndex < 0 && state.currentVeId) {
+        // 无 episodeList 时无法切集
+        return;
+      }
+      if (state.currentEpisodeIndex >= state.episodeList.length - 1) return;
+      const nextEp = state.episodeList[state.currentEpisodeIndex + 1];
+      const veId = typeof nextEp === 'object' ? nextEp.ve_id : nextEp;
+      if (veId) {
+        send({ type: 'episode_change', ve_id: veId });
+      }
+    });
+
+    /** 选集按钮:打开分集浮层 */
+    epListBtn.addEventListener('click', () => {
+      if (!state.isHost || state.episodeList.length === 0) return;
+      if (state.epPanelOpen) {
+        closeEpPanel();
+      } else {
+        openEpPanel();
+      }
+    });
+
+    /** 浮层关闭按钮 */
+    epPanelClose.addEventListener('click', closeEpPanel);
+
+    /** ESC 键关闭浮层 */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.epPanelOpen) {
+        e.stopPropagation();
+        closeEpPanel();
+      }
+    });
+
+    // ============ 进度条拖动(仅房主) ============
+
+    /** 从鼠标/触摸事件计算进度条位置(0-1) */
+    function getProgressRatio(clientX) {
+      const rect = progressBar.getBoundingClientRect();
+      let ratio = (clientX - rect.left) / rect.width;
+      ratio = Math.max(0, Math.min(1, ratio));
+      return ratio;
+    }
+
+    /** 开始拖动 */
+    function startDrag(clientX) {
+      if (!state.isHost) return;
+      state.isDragging = true;
+      progressWrap.classList.add('dragging');
+      const ratio = getProgressRatio(clientX);
+      const dur = videoEl.duration || 0;
+      const newTime = ratio * dur;
+      // 拖动中仅更新 UI,不实际 seek
+      progressPlayed.style.width = (ratio * 100) + '%';
+      progressThumb.style.left = (ratio * 100) + '%';
+      currentTimeEl.textContent = formatTime(newTime);
+      // 暂存拖动目标时间,松手时应用
+      state._dragTime = newTime;
+    }
+
+    /** 拖动中 */
+    function moveDrag(clientX) {
+      if (!state.isDragging) return;
+      const ratio = getProgressRatio(clientX);
+      const dur = videoEl.duration || 0;
+      const newTime = ratio * dur;
+      progressPlayed.style.width = (ratio * 100) + '%';
+      progressThumb.style.left = (ratio * 100) + '%';
+      currentTimeEl.textContent = formatTime(newTime);
+      state._dragTime = newTime;
+    }
+
+    /** 结束拖动:应用 seek */
+    function endDrag() {
+      if (!state.isDragging) return;
+      state.isDragging = false;
+      progressWrap.classList.remove('dragging');
+      if (state._dragTime != null && isFinite(state._dragTime) && videoEl.duration) {
+        state.applyingRemote = true;
+        videoEl.currentTime = state._dragTime;
+        state.applyingRemote = false;
+        // seeked 事件会触发发送 seek 消息
+        updateProgressUI();
+      }
+      state._dragTime = null;
+    }
+
+    /** 点击进度条(非拖动,直接跳转) */
+    function clickSeek(clientX) {
+      if (!state.isHost) return;
+      const ratio = getProgressRatio(clientX);
+      const dur = videoEl.duration || 0;
+      if (dur > 0) {
+        state.applyingRemote = true;
+        videoEl.currentTime = ratio * dur;
+        state.applyingRemote = false;
+        // seeked 事件会触发发送 seek 消息
+      }
+    }
+
+    // 鼠标事件
+    let mouseDownPos = null;
+    progressWrap.addEventListener('mousedown', (e) => {
+      if (!state.isHost) return;
+      e.preventDefault();
+      mouseDownPos = e.clientX;
+      startDrag(e.clientX);
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (state.isDragging) moveDrag(e.clientX);
+    });
+    document.addEventListener('mouseup', () => {
+      if (state.isDragging) endDrag();
+      mouseDownPos = null;
+    });
+
+    // 触摸事件(移动端)
+    progressWrap.addEventListener('touchstart', (e) => {
+      if (!state.isHost) return;
+      if (e.touches.length === 1) {
+        startDrag(e.touches[0].clientX);
+      }
+    }, { passive: true });
+    progressWrap.addEventListener('touchmove', (e) => {
+      if (state.isDragging && e.touches.length === 1) {
+        moveDrag(e.touches[0].clientX);
+      }
+    }, { passive: true });
+    progressWrap.addEventListener('touchend', () => {
+      if (state.isDragging) endDrag();
+    });
+
+    // ============ 初始化 ============
+
+    (function init() {
+      const { roomId, wsUrl } = parseUrl();
+      state.roomId = roomId;
+      state.wsUrl = wsUrl;
+
+      if (!roomId) {
+        videoNameEl.textContent = '错误:缺少 roomId';
+        return;
+      }
+
+      // 初始 UI
+      updateStatusBar();
+      applyRole();
+
+      // 开始连接
+      connectWS();
+
+      // 页面隐藏时降低心跳频率(可选,浏览器会自动节流 setInterval)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          // 页面隐藏时仍保持心跳,但可降低频率
+        } else {
+          // 页面恢复可见时立即 ping 一次
+          send({ type: 'ping', t: Date.now() });
+        }
+      });
+
+      // 防止视频右键菜单
+      videoEl.addEventListener('contextmenu', (e) => e.preventDefault());
+    })();
+  </script>
+</body>
+</html>

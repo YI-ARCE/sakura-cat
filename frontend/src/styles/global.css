@@ -1,0 +1,112 @@
+/* ===================================================================
+ * Yoru Sakura · 全局基础样式
+ * =================================================================== */
+
+@import './fonts.css';
+/* animations.css 由后续任务创建，此处预留引入 */
+@import './animations.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Cabinet Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color-scheme: dark light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color var(--duration-normal) var(--ease-fluid),
+    color var(--duration-normal) var(--ease-fluid);
+}
+
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+a {
+  color: var(--menu-active);
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------------
+ * 滚动条美化（适配深 / 浅双模式）
+ * 使用 --text-tertiary 的 rgba 表达，弱化视觉权重
+ * ------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  /* --text-tertiary 深色 #6B6B76 / 浅色 #A1A1AA，转 rgba 表达 */
+  background: rgba(107, 107, 118, 0.4);
+  border-radius: var(--radius-sm);
+}
+
+:root.light ::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 107, 118, 0.6);
+}
+
+:root.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.6);
+}
+
+/* -------------------------------------------------------------------
+ * 动效曲线工具类
+ * ------------------------------------------------------------------- */
+.ease-fluid {
+  transition-timing-function: var(--ease-fluid);
+}
+
+.ease-out-expo {
+  transition-timing-function: var(--ease-out-expo);
+}
+
+/* -------------------------------------------------------------------
+ * Naive UI Provider 高度继承修复
+ * Provider 默认渲染 div 且无 height，会断裂 #app -> layout 的高度链
+ * ------------------------------------------------------------------- */
+.n-config-provider,
+.n-message-provider,
+.n-dialog-provider,
+.n-notification-provider {
+  height: 100%;
+}
+
+/* -------------------------------------------------------------------
+ * 无障碍：尊重 prefers-reduced-motion，全局降级
+ * ------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

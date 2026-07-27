@@ -1,0 +1,55 @@
+# === 构建产物 ===
+.task
+bin
+build/bin
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+frontend/dist
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.app
+
+# === 依赖 ===
+frontend/node_modules
+vendor/
+
+# === 本地数据与日志(含敏感信息) ===
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+runtime/
+
+# === 敏感配置与证书 ===
+.env
+.env.*
+!.env.template
+*.pem
+*.key
+cert.pem
+sources.json
+
+# === IDE / 编辑器 ===
+.idea/
+.vscode/
+.trae/
+*.iml
+*.swp
+*.swo
+*~
+
+# === 操作系统 ===
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# === Wails / Go ===
+*.test
+*.out
+coverage.txt
+coverage.html

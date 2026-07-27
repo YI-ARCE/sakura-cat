@@ -1,0 +1,186 @@
+/* ===================================================================
+ * Yoru Sakura · 动画与关键帧
+ * 入场动效与状态切换动画的工具类集合
+ * =================================================================== */
+
+/* -------------------------------------------------------------------
+ * 关键帧定义
+ * ------------------------------------------------------------------- */
+
+/* 上浮淡入：默认入场动效 */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 模糊上浮：带 blur 的更柔和入场 */
+@keyframes fade-blur {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* 交叉淡入：纯透明度过渡，用于状态切换 */
+@keyframes crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 缩放淡入：从 0.95 放大至 1 */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 右侧滑入：从右向左位移 16px */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 左侧滑出：向左位移 16px 并淡出 */
+@keyframes slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+/* 二维码退出：缩小淡出 */
+@keyframes qr-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* 二维码进入：放大淡入 */
+@keyframes qr-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* -------------------------------------------------------------------
+ * 入场工具类（配合 useScrollReveal）
+ * 用法：<div ref="target" class="reveal" :class="{ 'is-visible': isVisible }">
+ * ------------------------------------------------------------------- */
+
+/* 基础类：初始隐藏，等待触发 */
+.reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* 可见态：触发 fade-up 动画
+ * 支持 --reveal-delay / --reveal-duration 自定义（由 useScrollReveal 写入） */
+.reveal.is-visible {
+  animation: fade-up var(--reveal-duration, var(--duration-entrance)) var(--ease-out-expo) forwards;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+/* 模糊上浮修饰类（配合 .reveal） */
+.reveal--blur.is-visible {
+  animation-name: fade-blur;
+}
+
+/* 缩放淡入修饰类 */
+.reveal--scale.is-visible {
+  animation-name: scale-in;
+}
+
+/* 右侧滑入修饰类 */
+.reveal--right.is-visible {
+  animation-name: slide-in-right;
+}
+
+/* -------------------------------------------------------------------
+ * 状态切换工具类（非入场）
+ * ------------------------------------------------------------------- */
+
+/* 交叉淡入 / 淡出：用于内容切换 */
+.crossfade-enter {
+  animation: crossfade var(--duration-normal) var(--ease-out-expo);
+}
+
+.crossfade-leave {
+  animation: crossfade var(--duration-normal) var(--ease-out-expo) reverse;
+}
+
+/* 二维码刷新切换 */
+.qr-out {
+  animation: qr-out var(--duration-fast) var(--ease-out-expo) forwards;
+}
+
+.qr-in {
+  animation: qr-in var(--duration-normal) var(--ease-out-expo) forwards;
+}
+
+/* 遮罩淡入 */
+.mask-fade-in {
+  animation: crossfade var(--duration-normal) var(--ease-out-expo);
+}
+
+/* -------------------------------------------------------------------
+ * 无障碍：尊重 prefers-reduced-motion，全局降级
+ * 开启减少动效时所有动画即时显示
+ * ------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-visible,
+  .crossfade-enter,
+  .crossfade-leave,
+  .qr-out,
+  .qr-in,
+  .mask-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+  }
+}

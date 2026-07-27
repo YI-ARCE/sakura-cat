@@ -1,0 +1,199 @@
+/* ===================================================================
+ * Yoru Sakura 设计系统 · Token 基础
+ * 深色（默认）+ 浅色双模式，并保留旧变量映射以保证向后兼容
+ * =================================================================== */
+
+/* -------------------------------------------------------------------
+ * 深色模式（默认） :root / :root.dark
+ * ------------------------------------------------------------------- */
+:root,
+:root.dark {
+  /* -- 背景层 -- */
+  --bg-base: #0A0A12;            /* 深夜蓝黑 */
+  --bg-elevated: #12121E;        /* 抬升面（侧栏/抽屉） */
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-solid: #0F0F17;
+
+  /* -- 边框 -- */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* -- 文本 -- */
+  --text-primary: #F5F5F7;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #6B6B76;
+
+  /* -- 强调色：樱花粉（CTA 主色） -- */
+  --accent-sakura: #FF6B9D;
+  --accent-sakura-hover: #FF8AB0;
+  --accent-sakura-pressed: #E55485;
+  --accent-sakura-glow: rgba(255, 107, 157, 0.4);
+
+  /* -- 辅助色：信息态（非 CTA） -- */
+  --accent-cyan: #7DD3FC;
+
+  /* -- 状态色 -- */
+  --color-success: #34D399;
+  --color-error: #F87171;
+  --color-warning: #FBBF24;
+
+  /* -- 圆角 -- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* -- 阴影 -- */
+  --shadow-card: 0 24px 80px rgba(0, 0, 0, 0.4);
+  --shadow-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-focus-sakura: 0 0 0 3px rgba(255, 107, 157, 0.15);
+
+  /* -- 间距（4px 递增 + 扩展档位） -- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* -- 动效曲线 -- */
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* -- 动效时长 -- */
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-entrance: 800ms;
+
+  /* -- 字体 -- */
+  --font-display: 'Cabinet Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  /* -- 玻璃质感 -- */
+  --glass-blur: blur(24px) saturate(180%);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* -- 旧变量映射（向后兼容） -- */
+  --bg-color: var(--bg-base);
+  --text-color: var(--text-primary);
+  --aside-bg: var(--bg-elevated);
+  --aside-border: var(--border-subtle);
+  --menu-active: var(--accent-sakura);
+  --menu-active-bg: rgba(255, 107, 157, 0.15);
+  --menu-hover-bg: rgba(255, 255, 255, 0.05);
+  --card-bg: var(--bg-card-solid);
+  --border-color: var(--border-subtle);
+  --logo-color: var(--accent-sakura);
+}
+
+/* -------------------------------------------------------------------
+ * 浅色模式 :root.light
+ * ------------------------------------------------------------------- */
+:root.light {
+  /* -- 背景层 -- */
+  --bg-base: #FAFAFC;
+  --bg-elevated: #FFFFFF;
+  --bg-card: rgba(255, 255, 255, 0.6);
+  --bg-card-solid: #FFFFFF;
+
+  /* -- 边框 -- */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  /* -- 文本 -- */
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-tertiary: #A1A1AA;
+
+  /* -- 强调色：樱花粉（浅色下用更深的粉以保证对比度） -- */
+  --accent-sakura: #E94B7C;
+  --accent-sakura-hover: #D63A6A;
+  --accent-sakura-pressed: #B82E55;
+  --accent-sakura-glow: rgba(233, 75, 124, 0.25);
+
+  /* -- 辅助色：信息态（非 CTA） -- */
+  --accent-cyan: #0EA5E9;
+
+  /* -- 状态色（浅色沿用深色值） -- */
+  --color-success: #34D399;
+  --color-error: #F87171;
+  --color-warning: #FBBF24;
+
+  /* -- 圆角（沿用） -- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* -- 阴影（浅色下更柔和） -- */
+  --shadow-card: 0 24px 80px rgba(0, 0, 0, 0.08);
+  --shadow-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-focus-sakura: 0 0 0 3px rgba(233, 75, 124, 0.15);
+
+  /* -- 间距（沿用） -- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* -- 动效曲线（沿用） -- */
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* -- 动效时长（沿用） -- */
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-entrance: 800ms;
+
+  /* -- 字体（沿用） -- */
+  --font-display: 'Cabinet Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  /* -- 玻璃质感（浅色） -- */
+  --glass-blur: blur(24px) saturate(180%);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: 1px solid rgba(0, 0, 0, 0.06);
+
+  /* -- 旧变量映射（向后兼容） -- */
+  --bg-color: var(--bg-base);
+  --text-color: var(--text-primary);
+  --aside-bg: var(--bg-elevated);
+  --aside-border: var(--border-subtle);
+  --menu-active: var(--accent-sakura);
+  --menu-active-bg: rgba(233, 75, 124, 0.1);
+  --menu-hover-bg: rgba(0, 0, 0, 0.04);
+  --card-bg: var(--bg-card-solid);
+  --border-color: var(--border-subtle);
+  --logo-color: var(--accent-sakura);
+}

@@ -1,0 +1,72 @@
+/* ===================================================================
+ * Yoru Sakura · 自托管字体声明
+ * 三套字体：Cabinet Grotesk（显示标题）/ Noto Sans SC（中文正文）/ JetBrains Mono（等宽）
+ * 字体文件位于 ../assets/fonts/
+ * 所有字体声明 font-display: swap，确保文本在字体加载前可用回退渲染
+ * =================================================================== */
+
+/* -------------------------------------------------------------------
+ * Cabinet Grotesk · 显示标题字体（500 / 700）
+ * ------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/CabinetGrotesk-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/CabinetGrotesk-Bold.woff2') format('woff2');
+}
+
+/* -------------------------------------------------------------------
+ * Noto Sans SC · 中文正文字体（400 / 500 / 700）
+ * 注意：CJK 字体文件较大，属正常现象
+ * ------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/NotoSansSC-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/NotoSansSC-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/NotoSansSC-Bold.woff2') format('woff2');
+}
+
+/* -------------------------------------------------------------------
+ * JetBrains Mono · 等宽数据字体（400 / 500）
+ * ------------------------------------------------------------------- */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+}
